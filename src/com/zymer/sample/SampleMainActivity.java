@@ -1,10 +1,8 @@
 package com.zymer.sample;
 
-import com.zymer.sdk.ZCryptoSDK;
-import com.zymer.sdk.ZKeyServerSDK;
-import com.zymer.sdk.ZPinSDK;
 import com.zymer.sdk.data.ZResult;
 import com.zymer.sdk.data.ZUserInfo;
+import com.zymer.sdk.main.ZSDK;
 
 import android.os.Bundle;
 import android.os.StrictMode;
@@ -18,21 +16,24 @@ import android.widget.EditText;
 public class SampleMainActivity extends Activity implements OnClickListener {
 	private int result = 0;
 	
-	private String uid = "test@zymerinc.com";
+	private String uid = "test1@zymerinc.com";
 	private String name = "testuser";
-	private String email = "test@zymerinc.com";
+	private String email = "test1@zymerinc.com";
 	private String description = "This user is test user for zymer";
 	private String data = "hello zymer!";
 	private String encData = "";
 	private String decData = "";
 	private String serial = "1234";
-	private String server = "http://192.168.1.10:3000";
+	private String server = "http://192.168.1.9:3000";
 	
 	private Button btnZPinSDK = null;
 	private Button btnZCryptoSDK = null;
 	private Button btnZKeyServerSDK = null;
 	
 	private EditText etOutput = null;
+	
+	private ZSDK zsdk = null;
+	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -50,6 +51,17 @@ public class SampleMainActivity extends Activity implements OnClickListener {
 		btnZKeyServerSDK.setOnClickListener(this);
 		
 		etOutput = (EditText)findViewById(R.id.etOutput);
+		
+		// create Pin SDK
+		zsdk = new ZSDK();
+
+		result = zsdk.initialize(this, server, serial);
+		output(result, "Initialize");
+		
+		// Create user
+		result = zsdk.createUser(uid, name, email, description);
+		output(result, "createUser");
+
 	}
 
 	@Override
@@ -64,29 +76,22 @@ public class SampleMainActivity extends Activity implements OnClickListener {
 	 */
 	public void testZPinSDK() 
 	{
-		output("Start ZPinSDK Testing...");
-		
-		ZPinSDK pinSDK = new ZPinSDK();
-		result = pinSDK.initialize(this);
-		output(result, "Initialize");
-		
-		result = pinSDK.removePin();
+		result = zsdk.removePin();
 		output(result, "removePin");
 
-		result = pinSDK.setPin("", "1234");
+		result = zsdk.setPin("", "1234");
 		output(result, "setPin");
 
-		result = pinSDK.verifyPin("1234");
+		result = zsdk.verifyPin("1234");
 		output(result, "verifyPin");
 
-		result = pinSDK.changePin("1234", "abcd");
+		result = zsdk.changePin("1234", "abcd");
 		output(result, "changePin");
 
-		result = pinSDK.verifyPin("abcd");
+		result = zsdk.verifyPin("abcd");
 		output(result, "verifyPin");
 		
 		output("ZPinSDK Testing done.");
-		
 	}
 	
 	/*
@@ -96,23 +101,15 @@ public class SampleMainActivity extends Activity implements OnClickListener {
 	{
 		output("Start ZCryptoSDK Testing...");
 		
-		ZCryptoSDK cryptoSDK = new ZCryptoSDK();
-		result = cryptoSDK.initialize(this);
-		output(result, "Initialize");
-		
-		result = cryptoSDK.reset();
-		output(result, "reset");
-		
-		result = cryptoSDK.createUser(uid, name, email, description);
-		output(result, "createUser");
-		
-		encData = cryptoSDK.encrypt(uid, data);
+		// select uid for encrypt user
+//		uid = "test2@zymerinc.com";
+		encData = zsdk.encrypt(uid, data);
 		if (!encData.isEmpty())
 			output(ZResult.RESULT_OK, "encData");
 		else
 			output(ZResult.ERROR_UNEXPECTED, "encData");
 		
-		decData = cryptoSDK.decrypt(encData);
+		decData = zsdk.decrypt(encData);
 		if (!decData.isEmpty())
 			output(ZResult.RESULT_OK, "decrypt");
 		else
@@ -131,24 +128,14 @@ public class SampleMainActivity extends Activity implements OnClickListener {
 	 * KeyServer SDK
 	 */
 	public void testZKeyServerSDK() 
-	{
-		output("Start ZKeyServerSDK Testing...");
-		
-		ZKeyServerSDK keySDK = new ZKeyServerSDK();
-		
-		result = keySDK.initialize(this, server, serial);
-		output(result, "initialize");
-		
-		result = keySDK.addUserInfo(uid, name, email, description);
-		output(result, "addUserInfo");
-
-		keySDK.synchronize();
+	{		
+		zsdk.synchronize();
 		output(result, "synchronize");
 		
 		String uinfo = "user info=";
-		int count = keySDK.getUserCount();
+		int count = zsdk.getUserCount();
 		for (int i = 0; i < count; i++) {
-			ZUserInfo zUserInfo = keySDK.getUserInfo(i);
+			ZUserInfo zUserInfo = zsdk.getUserInfo(i);
 			uinfo += zUserInfo.getUid() + ",";
 			uinfo += zUserInfo.getName() + ",";
 			uinfo += zUserInfo.getEmail() + ",";
@@ -157,14 +144,13 @@ public class SampleMainActivity extends Activity implements OnClickListener {
 			output(result, uinfo);
 		}
 
-		result = keySDK.addKey(uid, "this is key");
-		output(result, "addKey");
-
-		result = keySDK.deleteKey(uid);
+		/* If you want to delete all key information, use below apis.
+		result = zsdk.deleteKey(uid);
 		output(result, "deleteKey");
 		
-		result = keySDK.resetKeyServer();
+		result = zsdk.resetKeyServer();
 		output(result, "resetKeyServer");
+		*/
 		
 		output("ZKeyServerSDK Testing done.");
 	}

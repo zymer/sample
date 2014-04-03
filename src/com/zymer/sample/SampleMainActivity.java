@@ -24,7 +24,6 @@ public class SampleMainActivity extends Activity implements OnClickListener {
 	private String encData = "";
 	private String decData = "";
 	private String serial = "1234";
-	private String server = "http://192.168.1.9:3000";
 	
 	private Button btnZPinSDK = null;
 	private Button btnZCryptoSDK = null;
@@ -55,7 +54,7 @@ public class SampleMainActivity extends Activity implements OnClickListener {
 		// create Pin SDK
 		zsdk = new ZSDK();
 
-		result = zsdk.initialize(this, server, serial);
+		result = zsdk.initialize(this, serial);
 		output(result, "Initialize");
 		
 		// Create user
